@@ -36,6 +36,7 @@ static struct thing *registered_things[10];
 static int registered_thing_counter = 0;
 static char http_ack_context[65];
 static char client_id[50];
+static char password[65];
 
 void handle_http_ack(MessageData *md) {
     MQTTMessage *message = md->message;
@@ -49,6 +50,9 @@ int connect_datonis_instance(char *server) {
     int rc = -1;
 
     sprintf(client_id, "%s%0.0f", CLIENT_ID_PREFIX, get_time_ms());
+    
+    get_hmac(configuration.access_key, password);
+    printf("Connecting to Datonis with credentials \n Username %s and Password %s" , configuration.access_key, password);
 
     NewNetwork(&n);
     ConnectNetwork(&n, server, 1883);
@@ -60,6 +64,8 @@ int connect_datonis_instance(char *server) {
     data.willFlag = 0;
     data.MQTTVersion = 3;
     data.clientID.cstring = client_id;
+    data.username.cstring = configuration.access_key;
+    data.password.cstring = password;
     data.keepAliveInterval = 20;
     data.cleansession = 1;
 
