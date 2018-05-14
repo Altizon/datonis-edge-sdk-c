@@ -83,7 +83,7 @@ int connect_datonis_instance(char *server) {
 }
 
 int connect_datonis() {
-    return connect_datonis_instance("mqtt-broker.datonis.io");
+    return connect_datonis_instance("telemetry.datonis.io");
 }
 
 int disconnect_datonis() {
