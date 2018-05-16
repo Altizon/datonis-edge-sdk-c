@@ -52,7 +52,7 @@ int connect_datonis_instance(char *server) {
     sprintf(client_id, "%s%0.0f", CLIENT_ID_PREFIX, get_time_ms());
 
     get_hmac(configuration.access_key, password);
-    printf("Connecting to Datonis with credentials \n Username %s and Password %s" , configuration.access_key, password);
+    printf("Connecting to Datonis with Username %s " , configuration.access_key);
 
     NewNetwork(&n);
     ConnectNetwork(&n, server, 1883);
