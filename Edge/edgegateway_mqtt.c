@@ -36,12 +36,13 @@ static struct thing *registered_things[10];
 static int registered_thing_counter = 0;
 static char http_ack_context[65];
 static char client_id[50];
+static char password[65];
 
 void handle_http_ack(MessageData *md) {
     MQTTMessage *message = md->message;
     char buf[1000];
 
-    sprintf(buf, "%.*s", (int)message->payloadlen, (char *)message->payload);   
+    sprintf(buf, "%.*s", (int)message->payloadlen, (char *)message->payload);
     parse_http_ack(buf, http_ack_context, &http_return_code);
 }
 
@@ -50,16 +51,21 @@ int connect_datonis_instance(char *server) {
 
     sprintf(client_id, "%s%0.0f", CLIENT_ID_PREFIX, get_time_ms());
 
+    get_hmac(configuration.access_key, password);
+    printf("Connecting to Datonis with Username %s " , configuration.access_key);
+
     NewNetwork(&n);
     ConnectNetwork(&n, server, 1883);
     //ConnectNetwork(&n, "localhost", 1883);
     MQTTClient(&client, &n, 1000, client_writebuf, sizeof(client_writebuf), client_readbuf, sizeof(client_readbuf));
-    
+
     MQTTPacket_connectData data = MQTTPacket_connectData_initializer;
     /* TODO: Change this based on access key -- strncpy 22 chars */
     data.willFlag = 0;
     data.MQTTVersion = 3;
     data.clientID.cstring = client_id;
+    data.username.cstring = configuration.access_key;
+    data.password.cstring = password;
     data.keepAliveInterval = 20;
     data.cleansession = 1;
 
@@ -77,7 +83,7 @@ int connect_datonis_instance(char *server) {
 }
 
 int connect_datonis() {
-    return connect_datonis_instance("mqtt.datonis.io");
+    return connect_datonis_instance("telemetry.datonis.io");
 }
 
 int disconnect_datonis() {
@@ -109,14 +115,14 @@ int send_data(enum QoS qos, char *topic, char *data, int flag) {
 	message.payload = (void *)data;
         message.payloadlen = strlen(data);
     }
-    begin = get_time_ms(); 
+    begin = get_time_ms();
     ret = MQTTPublish(&client, topic, &message);
     end = get_time_ms();
     printf("\nData Transmission Time: %lf", (end-begin));
 
     return ret;
 }
-    
+
 int encode_and_send_data(enum QoS qos, char *topic, char *json, int flag) {
     /* First calculate hash */
     char buf[65];
@@ -127,13 +133,13 @@ int encode_and_send_data(enum QoS qos, char *topic, char *json, int flag) {
     double t2;
 
     /* Remove the last curly brace */
-    json[strlen(json) - 1] = '\0'; 
+    json[strlen(json) - 1] = '\0';
     /* Append access key and hashcode */
     strcat(json, ",");
     putJSONStringAndComma(json, "hash", hash);
     putJSONStringAndComma(json, "access_key", configuration.access_key);
     putJSONDoubleAndComma(json, "aliot_protocol_version", 2.0);
-    json[strlen(json) - 1] = '\0'; 
+    json[strlen(json) - 1] = '\0';
     /* Now end the JSON */
     endJSON(json);
 
@@ -180,7 +186,7 @@ void handle_instruction(MessageData *md) {
     int rc = -1;
 
     sprintf(topic_str, "%.*s", topic->lenstring.len, topic->lenstring.data);
-    sprintf(buf, "%.*s", (int)message->payloadlen, (char *)message->payload);   
+    sprintf(buf, "%.*s", (int)message->payloadlen, (char *)message->payload);
     rc = parse_instruction_json(buf, to_validate, server_hash, thing_key, alert_key, instruction);
     //printf("To validate: %s\n", to_validate);
     //printf("thing key: %s\nalert key: %s\ninstruction: %s\n", thing_key, alert_key, instruction);
@@ -200,7 +206,7 @@ void handle_instruction(MessageData *md) {
         }
     } else {
         fprintf(stderr, "\nCould not parse the JSON content for the instruction: %s\n", buf);
-    }    
+    }
 }
 
 int register_thing(struct thing *thing) {
@@ -231,7 +237,7 @@ int transmit_thing_heartbeat(struct thing *thing) {
     memset(jsonbuf, '\0', sizeof(jsonbuf));
     sprintf(topic, "Altizon/Datonis/%s/heartbeat", client_id);
     char *json = get_thing_heartbeat_json(jsonbuf, thing);
-    return encode_and_send_data(QOS0, topic, json,0); 
+    return encode_and_send_data(QOS0, topic, json,0);
 }
 
 int transmit_thing_data(struct thing *thing, char* value, char *waypoint) {
@@ -239,7 +245,7 @@ int transmit_thing_data(struct thing *thing, char* value, char *waypoint) {
     memset(jsonbuf, '\0', sizeof(jsonbuf));
 
     char *json = get_thing_data_json(jsonbuf, thing, value, waypoint);
-   	sprintf(topic, "Altizon/Datonis/%s/event", client_id);	
+   	sprintf(topic, "Altizon/Datonis/%s/event", client_id);
     return encode_and_send_data(QOS1, topic, json,0);
 }
 
