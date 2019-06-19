@@ -36,7 +36,7 @@ void putJSONStringAndComma(char *buffer, char *key, char *value) {
 void putJSONDouble(char *buffer, char *key, double value) {
 
 	char doublestr[1024];
-	memset(doublestr, 1024, '\0');
+	memset(doublestr, '\0', sizeof(doublestr));
 	sprintf(doublestr, "\"%s\":%0.0f", key, value);
 	strcat(buffer, doublestr);
 }

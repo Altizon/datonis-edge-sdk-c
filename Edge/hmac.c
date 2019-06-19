@@ -86,7 +86,7 @@
 
 void sha256_initialize(sha256 *sha) {
 	int i;
-	for (i = 0; i < 17; ++i)
+	for (i = 0; i < sizeof(sha->buffer) / sizeof(sha->buffer[0]); ++i)
 		sha->buffer[i] = 0;
 	sha->state[0] = 0x6a09e667;
 	sha->state[1] = 0xbb67ae85;
@@ -96,7 +96,7 @@ void sha256_initialize(sha256 *sha) {
 	sha->state[5] = 0x9b05688c;
 	sha->state[6] = 0x1f83d9ab;
 	sha->state[7] = 0x5be0cd19;
-	for (i = 0; i < 8; ++i)
+	for (i = 0; i < sizeof(sha->length) / sizeof(sha->length[0]); ++i)
 		sha->length[i] = 0;
 }
 

@@ -62,7 +62,7 @@ int main() {
         exit(1);
     } else {
         printf("Successfully Registered thing with Datonis!\n");
-    }%/
+    }*/
 
     if (1) {
         send_example_alerts(&t);
