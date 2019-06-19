@@ -50,8 +50,8 @@ static int encode_and_send_data(const char *url, const char *json, int flag) {
         char signature[1024];
 	double begin, end;
 
-        memset(accessheader, sizeof(accessheader), '\0');
-        memset(signature, sizeof(signature), '\0');
+        memset(accessheader, '\0', sizeof(accessheader));
+        memset(signature, '\0', sizeof(signature));
 
 
         sprintf(accessheader, "X-Access-Key:%s", configuration.access_key);
@@ -66,8 +66,8 @@ static int encode_and_send_data(const char *url, const char *json, int flag) {
 		char compressed[25];
 		char contentType[50];
 		ssize_t len = 0;
-		memset(compressed, sizeof(compressed), '\0');
-		memset(contentType, sizeof(contentType), '\0');
+		memset(compressed, '\0', sizeof(compressed));
+		memset(contentType, '\0', sizeof(contentType));
 
 		sprintf(compressed, "X-Compressed:%s", "LZF");
 		sprintf(contentType, "Content-Type:%s", "application/octet-stream");
