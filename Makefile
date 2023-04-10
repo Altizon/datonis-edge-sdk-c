@@ -16,8 +16,11 @@ HEADERS = $(srcdir)/*.h
 
 
 SAMPLE_C = sample.c
+SAMPLE_CPP = sample.cpp
 SAMPLE_MQTT = ${blddir}/samples/sample_mqtt
 SAMPLE_HTTP = ${blddir}/samples/sample_http
+SAMPLE_MQTT_CPP = ${blddir}/samples/sample_mqtt_cpp
+SAMPLE_HTTP_CPP = ${blddir}/samples/sample_http_cpp
 SAMPLE_BULK_C = sample_bulk_send.c
 SAMPLE_MQTT_BULK = ${blddir}/samples/sample_bulk_send_mqtt
 SAMPLE_HTTP_BULK = ${blddir}/samples/sample_bulk_send_http
@@ -37,6 +40,7 @@ endif
 ifeq ($(OSTYPE),Linux)
 
 CC ?= gcc
+CXX ?= g++
 
 ifndef INSTALL
 INSTALL = install
@@ -58,7 +62,7 @@ LDFLAGS_C = -shared -Wl,-soname,lib$(MQTT_EMBED_LIB_C).so.${MAJOR_VERSION}
 
 all: build
 	
-build: | mkdir ${EMBED_MQTTLIB_C_TARGET} ${SAMPLE_MQTT} ${SAMPLE_HTTP} ${SAMPLE_MQTT_BULK} ${SAMPLE_HTTP_BULK}
+build: | mkdir ${EMBED_MQTTLIB_C_TARGET} ${SAMPLE_MQTT} ${SAMPLE_HTTP} ${SAMPLE_MQTT_BULK} ${SAMPLE_HTTP_BULK} ${SAMPLE_MQTT_CPP} ${SAMPLE_HTTP_CPP}
 
 clean:
 	rm -rf ${blddir}/*
@@ -71,6 +75,12 @@ ${SAMPLE_MQTT}: ${SAMPLE_C}
 
 ${SAMPLE_HTTP}: ${SAMPLE_C}
 	${CC} -g3 -D_COMMUNICATION_MODE_HTTP_ -o ${SAMPLE_HTTP}  Edge/*c Implementation/*c LZFCompression/*c ${SAMPLE_C} -I Edge -I LZFCompression -lcurl
+
+${SAMPLE_MQTT_CPP}: ${SAMPLE_CPP}
+	${CXX} -g3 -D_COMMUNICATION_MODE_MQTT_ -o ${SAMPLE_MQTT_CPP} MQTTPacket/src/*c Edge/*c Implementation/*c LZFCompression/*c ${SAMPLE_CPP} -I Edge -I MQTTPacket/src -I Implementation -I LZFCompression
+
+${SAMPLE_HTTP_CPP}: ${SAMPLE_CPP}
+	${CXX} -g3 -D_COMMUNICATION_MODE_HTTP_ -o ${SAMPLE_HTTP_CPP}  Edge/*c Implementation/*c LZFCompression/*c ${SAMPLE_CPP} -I Edge -I LZFCompression -lcurl
 
 ${SAMPLE_MQTT_BULK}: ${SAMPLE_BULK_C}
 	${CC} -g3 -D_COMMUNICATION_MODE_MQTT_ -o ${SAMPLE_MQTT_BULK}  MQTTPacket/src/*c Edge/*c Implementation/*c LZFCompression/*c ${SAMPLE_BULK_C} -I Edge -I MQTTPacket/src -I Implementation -I LZFCompression

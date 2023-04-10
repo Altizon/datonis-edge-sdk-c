@@ -7,6 +7,10 @@
 
 #include "edgegateway.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 char* get_hmac(const char* message, char *hmacdigest);
 char* get_thing_register_json(char *json, struct thing *thing);
 char* get_thing_heartbeat_json(char *json, struct thing *thing);
@@ -19,5 +23,9 @@ int translate_http_code(int http_code);
 char* get_thing_bulk_data_json(char *json, char *packets, int packet_size, int count);
 char* get_thing_data_json_ts(char *json, struct thing *thing, char *value, char *waypoint, double timestamp);
 void  parse_http_ack(char *json, char *context, int *response_code);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

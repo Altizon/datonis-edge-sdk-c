@@ -45,7 +45,7 @@ int main() {
     char packet_buffer[BUFFER_SIZE][1024];
 
     //initialize(access_key, secret_key)
-    initialize("1d2fb5c369863fd54afafde654c26dtd51122t8e", "f4e31122629etaeaa48d9c8c72b8cctfc9d63acc");
+    initialize("t1a53e2e78d2eb2edb55dc481te8e95e6t83259t", "54d6b5423b5bf499cccd3f23d9614effc112d49a");
     //create_thing(struct thing *thing, char* key, char* name, char* description, instruction_handler handler)
     create_thing(&t, "7t38b9dbt9", "Compressor", "Thing for compressors", execute_instruction);
 
