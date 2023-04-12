@@ -40,11 +40,11 @@ int main() {
     struct thing t;
     char buf[500];
     char waypoint[50];
-    string access_key = "t1a53e2e78d2eb2edb55dc481te8e95e6t83259t";
-    string secret_key = "54d6b5423b5bf499cccd3f23d9614effc112d49a";
+    string access_key = "93a768t53fd3e21tf7cc357c9b3f2f446297d872";
+    string secret_key = "cefdf5e449c93e32567155f6ddct9d47e38tfd57";
     initialize(&access_key[0], &secret_key[0]);
     //create_thing(struct thing *thing, char* key, char* name, char* description, instruction_handler handler)
-    create_thing(&t, "e89c4t9d8a", "cd-5", "", execute_instruction);
+    create_thing(&t, "742923439d", "Compressor 1", "Thing for compressors", execute_instruction);
     int response = 0;
     response = connect_datonis();
     if (response != ERR_OK) {
@@ -61,7 +61,7 @@ int main() {
         printf("Successfully Registered thing with Datonis!\n");
     }*/
 
-    if (0) {
+    if (1) {
         send_example_alerts(&t);
     }
 
@@ -77,7 +77,7 @@ int main() {
         yield(2000);
         yield(2000);
 
-    sprintf(buf, "{\"num1\":%ld,\"num2\":%ld}", random(), random());
+    sprintf(buf, "{\"pressure\":%ld,\"temperature\":%ld}", random(), random());
 	//waypoint format: [latitude, longitude], where latitude and longitude must be double values.	
 	sprintf(waypoint, "[19.%ld,73.%ld]", random() % 100000, random() % 100000);
 
