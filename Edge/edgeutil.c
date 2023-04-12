@@ -19,8 +19,8 @@ char* get_hmac(const char* message, char *hmacdigest) {
     hmac_sha256 hmac;
     int i;
 
-    hmac_sha256_initialize(&hmac, configuration.secret_key, strlen(configuration.secret_key));
-    hmac_sha256_update(&hmac, message, strlen(message));
+    hmac_sha256_initialize(&hmac, (const uint8_t*)configuration.secret_key, strlen(configuration.secret_key));
+    hmac_sha256_update(&hmac, (const uint8_t*)message, strlen(message));
     hmac_sha256_finalize(&hmac, NULL, 0);
 
     char *ptr = hmacdigest;

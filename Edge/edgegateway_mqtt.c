@@ -57,7 +57,7 @@ int connect_datonis_instance(char *server) {
     NewNetwork(&n);
     ConnectNetwork(&n, server, 1883);
     //ConnectNetwork(&n, "localhost", 1883);
-    MQTTClient(&client, &n, 1000, client_writebuf, sizeof(client_writebuf), client_readbuf, sizeof(client_readbuf));
+    MQTTClient(&client, &n, 1000, (unsigned char*)client_writebuf, sizeof(client_writebuf), (unsigned char*)client_readbuf, sizeof(client_readbuf));
 
     MQTTPacket_connectData data = MQTTPacket_connectData_initializer;
     /* TODO: Change this based on access key -- strncpy 22 chars */

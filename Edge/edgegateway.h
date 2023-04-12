@@ -8,6 +8,9 @@
 #ifndef EDGEGATEWAY_H_
 #define EDGEGATEWAY_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct gateway_access {
 	char access_key[64];
@@ -131,5 +134,9 @@ int transmit_compressed_thing_data_packet(char *packet);
  * Yield for any incoming communication
  */
 void yield(int milliseconds);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

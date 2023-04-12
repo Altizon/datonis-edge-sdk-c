@@ -1,22 +1,22 @@
 #include "edgegateway.h"
 #include "edgeutil.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
-#include <stdbool.h>
+#include <iostream>
 
-void execute_instruction(char * thing_key, char * alert_key, char *instruction) {
-    printf("\nExecute Instruction: %s\n", instruction);
-    transmit_instruction_feedback(alert_key, 1, "A demo warning to show feedback", "{\"some_key\":\"some_value\"}");
-}
+using namespace std;
 
-static void transmit_heartbeat_to_datonis(struct thing *t) {
+void transmit_heartbeat_to_datonis(struct thing *t) {
     int response = transmit_thing_heartbeat(t);
     if (response != ERR_OK) {
         fprintf(stderr, "Failed to send thing heartbeat. Response Code: %d, Error: %s\n", response, get_error_code_message(response));
     } else {
-        printf("Heartbeat Response: %d\n", response);
+        cout << "Heartbeat Response: " << response << std::endl;
     }
+}
+
+static void execute_instruction(char *thing_key, char *alert_key, char *instruction) {
+    cout << "\nExecute Instruction: " << instruction << std::endl;
+    transmit_instruction_feedback(alert_key, 1, "A demo warning to show feedback", "{\"some_key\":\"some_value\"}");
 }
 
 static void send_example_alert(struct thing *t, int level, char * msg) {
@@ -36,16 +36,15 @@ static void send_example_alerts(struct thing *t) {
     send_example_alert(t, 3, "Example CRITICAL alert from C Agent");
 }
 
-
 int main() {
     struct thing t;
     char buf[500];
     char waypoint[50];
-    //initialize(access_key, secret_key)
-    initialize("93a768t53fd3e21tf7cc357c9b3f2f446297d872", "cefdf5e449c93e32567155f6ddct9d47e38tfd57");
+    string access_key = "93a768t53fd3e21tf7cc357c9b3f2f446297d872";
+    string secret_key = "cefdf5e449c93e32567155f6ddct9d47e38tfd57";
+    initialize(&access_key[0], &secret_key[0]);
     //create_thing(struct thing *thing, char* key, char* name, char* description, instruction_handler handler)
     create_thing(&t, "742923439d", "Compressor 1", "Thing for compressors", execute_instruction);
-
     int response = 0;
     response = connect_datonis();
     if (response != ERR_OK) {
@@ -105,7 +104,5 @@ int main() {
         }
         sleep(5);
     }
-
     return 0;
 }
-
