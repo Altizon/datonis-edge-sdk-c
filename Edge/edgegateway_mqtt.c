@@ -4,7 +4,7 @@
  * Provides an MQTT specific implementation for the edgegateway interface
  */
 #if _COMMUNICATION_MODE_MQTT_
-
+#include<curl/curl.h>
 #include "edgegateway.h"
 #include "edgeutil.h"
 #include "MQTTClient.h"
@@ -14,10 +14,10 @@
 #include <stdio.h>
 #include "timeutil.h"
 #include "LZFcompress.h"
-
+#include<cjson/cJSON.h>
 /** Change this string on every new client you run **/
 #define CLIENT_ID_PREFIX  "_EX_CLIENT_"
-
+#define DATONIS_API_URL "https://api.datonis.io/api/v3/things/" 
 /** Retries to wait for message ACK
  * Note that this number is sufficiently large.
  * i.e. it would at max wait for 5000 * 10 = 50 seconds for the ack
@@ -37,6 +37,133 @@ static int registered_thing_counter = 0;
 static char http_ack_context[65];
 static char client_id[50];
 static char password[65];
+
+struct MemoryStruct {
+  char *memory;
+  size_t size;
+};
+
+static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+  size_t realsize = size * nmemb;
+  struct MemoryStruct *mem = (struct MemoryStruct *)userp;
+
+  char *ptr = (char*)realloc(mem->memory, mem->size + realsize + 1);
+  if (ptr == NULL) {
+    printf("Not enough memory (realloc returned NULL)\n");
+    return 0;
+  }
+
+  mem->memory = ptr;
+  memcpy(&(mem->memory[mem->size]), contents, realsize);
+  mem->size += realsize;
+  mem->memory[mem->size] = 0;
+
+  return realsize;
+}
+
+// Function to fetch thing data from Datonis API
+char* fetch_thing_data(const char *thing_key,const char *ACCESS_KEY) {
+    CURL *curl;
+    CURLcode res;
+    char url[512];  
+    struct MemoryStruct chunk;
+
+    chunk.memory = (char*)malloc(1);  
+    chunk.size = 0;           
+
+    // Construct the full URL
+    snprintf(url, sizeof(url), "%s%s", DATONIS_API_URL, thing_key);
+
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    curl = curl_easy_init();
+    if(curl) {
+      curl_easy_setopt(curl, CURLOPT_URL, url);
+      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+      curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+
+      // Add custom headers
+      struct curl_slist *headers = NULL;
+      char access_key_header[256];
+      snprintf(access_key_header, sizeof(access_key_header), "X-Access-Key: %s", ACCESS_KEY);  
+
+      headers = curl_slist_append(headers, access_key_header);
+      headers = curl_slist_append(headers, "Content-Type: application/json");
+
+      curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+      /* Perform the request, res will get the return code */
+      res = curl_easy_perform(curl);
+
+      /* Check for errors */
+      if(res != CURLE_OK) {
+        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        free(chunk.memory);  // Important to free allocated memory
+        chunk.memory = NULL; // Set to NULL after freeing to prevent dangling pointer.
+      }
+      else {
+        /*
+         * Now, our chunk.memory points to a memory block that is chunk.size
+         * bytes big and contains the remote file.
+         */
+         //printf("%s\n", chunk.memory); // Optional: print the fetched JSON
+      }
+
+      /* always cleanup */
+      curl_easy_cleanup(curl);
+      curl_slist_free_all(headers);
+    }
+
+    curl_global_cleanup();
+
+    return chunk.memory; // Return the allocated memory to the caller
+}
+
+int is_thing_registered(const char *json_string) {
+    if (json_string == NULL) {
+        printf("JSON string is NULL.\n");
+        return 0;
+    }
+
+    cJSON *json = cJSON_Parse(json_string);
+    if (json == NULL) {
+        const char *error_ptr = cJSON_GetErrorPtr();
+        if (error_ptr != NULL) {
+            fprintf(stderr, "Error before: %s\n", error_ptr);
+        }
+        return 0;
+    }
+
+    cJSON *thing = cJSON_GetObjectItemCaseSensitive(json, "thing");
+    if (thing == NULL) {
+        printf("thing object not found.\n");
+        cJSON_Delete(json);
+        return 0;
+    }
+
+    cJSON *state = cJSON_GetObjectItemCaseSensitive(thing, "state");
+    if (state == NULL) {
+        printf("state object not found.\n");
+        cJSON_Delete(json);
+        return 0;
+    }
+
+    if (!cJSON_IsString(state)) {
+        printf("state is not a string.\n");
+        cJSON_Delete(json);
+        return 0;
+    }
+
+    if (strcmp(state->valuestring, "registered") == 0) {
+        cJSON_Delete(json);
+        return 1; // State is "registered"
+    } else {
+        cJSON_Delete(json);
+        return 0; // State is not "registered"
+    }
+}
+
 
 void handle_http_ack(MessageData *md) {
     MQTTMessage *message = md->message;
@@ -209,26 +336,52 @@ void handle_instruction(MessageData *md) {
     }
 }
 
+
 int register_thing(struct thing *thing) {
-    char topic[500], jsonbuf[2048];
-    char *json;
+    char *thing_data_json;
     int rc = -1;
 
-    sprintf(topic, "Altizon/Datonis/%s/register", client_id);
-    json = get_thing_register_json(jsonbuf, thing);
-    rc = encode_and_send_data(QOS1, topic, json,0);
-    if (rc != ERR_OK) {
-        return rc;
+    // 1. Fetch thing data from Datonis API
+    thing_data_json = fetch_thing_data(thing->key,configuration.access_key); 
+    printf("Thing data fetched: %s\n", thing_data_json);
+
+    if (thing_data_json == NULL) {
+        printf("Failed to fetch thing data from Datonis API.\n");
+        return -1;  
     }
 
-    registered_things[registered_thing_counter++] = thing;
+
+    // 2. Check if the state is "registered"
+    if (!is_thing_registered(thing_data_json)) {
+        printf("Thing is already registered.\n");
+        // Thing is registered, proceed with registration logic
+        char topic[500], jsonbuf[2048];
+        char *json;
+
+        sprintf(topic, "Altizon/Datonis/%s/register", client_id); 
+        json = get_thing_register_json(jsonbuf, thing); 
+        rc = encode_and_send_data(QOS1, topic, json, 0);  
+
+        if (rc != ERR_OK) { 
+            free(thing_data_json); // Free the JSON data before returning.
+            return rc;
+        }
+        printf("Thing registered successfully.\n");
+ 
+    } else {
+        printf("Thing is already registered. Handling instruction only.\n");
+    }
     if (thing->handler != NULL) {
-        printf("Subscribing for instructions\n");
-        sprintf(thing->instruction_topic, "Altizon/Datonis/%s/thing/%s/executeInstruction", configuration.access_key, thing->key);
-        rc = MQTTSubscribe(&client, thing->instruction_topic, QOS2, handle_instruction);
-        printf("Subscribe return code: %d\n", rc);
+            printf("Subscribing for instructions\n");
+            sprintf(thing->instruction_topic, "Altizon/Datonis/%s/thing/%s/executeInstruction", configuration.access_key, thing->key); // Assume configuration.access_key is defined elsewhere.
+            rc = MQTTSubscribe(&client, thing->instruction_topic, QOS2, handle_instruction); // Assume MQTTSubscribe and handle_instruction are defined elsewhere.
+            printf("Subscribe return code: %d\n", rc);
     }
-
+    else{
+        rc = 0; 
+    }
+    
+    free(thing_data_json);  // Important: Free the allocated memory
     return rc;
 }
 
