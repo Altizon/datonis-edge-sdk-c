@@ -56,37 +56,43 @@ EMBED_MQTTLIB_C_TARGET = ${blddir}/lib${MQTT_EMBED_LIB_C}.so.${VERSION}
 
 
 CCFLAGS_SO = -g -fPIC -Os -Wall -fvisibility=hidden -DLINUX_SO
-FLAGS_EXE = -I ${srcdir}  -L ${blddir}
+FLAGS_EXE = -I ${srcdir} -I/usr/local/include -L/usr/local/lib
+
 
 LDFLAGS_C = -shared -Wl,-soname,lib$(MQTT_EMBED_LIB_C).so.${MAJOR_VERSION}
 
 all: build
-	
+
 build: | mkdir ${EMBED_MQTTLIB_C_TARGET} ${SAMPLE_MQTT} ${SAMPLE_HTTP} ${SAMPLE_MQTT_BULK} ${SAMPLE_HTTP_BULK} ${SAMPLE_MQTT_CPP} ${SAMPLE_HTTP_CPP}
 
 clean:
 	rm -rf ${blddir}/*
-	
+
 mkdir:
 	-mkdir -p ${blddir}/samples
 
-${SAMPLE_MQTT}: ${SAMPLE_C}
-	${CC} -g3 -D_COMMUNICATION_MODE_MQTT_ -o ${SAMPLE_MQTT}  MQTTPacket/src/*c Edge/*c Implementation/*c LZFCompression/*c ${SAMPLE_C} -I Edge -I MQTTPacket/src -I Implementation -I LZFCompression
+
+${SAMPLE_MQTT}: ${SAMPLE_C} Edge/*c Implementation/*c LZFCompression/*c MQTTPacket/src/*c
+	${CC} -g3 -D_COMMUNICATION_MODE_MQTT_ -o ${SAMPLE_MQTT}  MQTTPacket/src/*c Edge/*c Implementation/*c LZFCompression/*c ${SAMPLE_C} -I Edge -I MQTTPacket/src -I Implementation -I LZFCompression  -lcurl -lcjson
+
 
 ${SAMPLE_HTTP}: ${SAMPLE_C}
-	${CC} -g3 -D_COMMUNICATION_MODE_HTTP_ -o ${SAMPLE_HTTP}  Edge/*c Implementation/*c LZFCompression/*c ${SAMPLE_C} -I Edge -I LZFCompression -lcurl
+	${CC} -g3 -D_COMMUNICATION_MODE_HTTP_ -o ${SAMPLE_HTTP}  Edge/*c Implementation/*c LZFCompression/*c ${SAMPLE_C} -I Edge -I LZFCompression -lcurl  -lcjson
+
 
 ${SAMPLE_MQTT_CPP}: ${SAMPLE_CPP}
-	${CXX} -g3 -D_COMMUNICATION_MODE_MQTT_ -o ${SAMPLE_MQTT_CPP} MQTTPacket/src/*c Edge/*c Implementation/*c LZFCompression/*c ${SAMPLE_CPP} -I Edge -I MQTTPacket/src -I Implementation -I LZFCompression
+	${CXX} -g3 -D_COMMUNICATION_MODE_MQTT_ -o ${SAMPLE_MQTT_CPP} MQTTPacket/src/*c Edge/*c Implementation/*c LZFCompression/*c ${SAMPLE_CPP} -I Edge -I MQTTPacket/src -I Implementation -I LZFCompression -lcurl -lcjson
 
 ${SAMPLE_HTTP_CPP}: ${SAMPLE_CPP}
 	${CXX} -g3 -D_COMMUNICATION_MODE_HTTP_ -o ${SAMPLE_HTTP_CPP}  Edge/*c Implementation/*c LZFCompression/*c ${SAMPLE_CPP} -I Edge -I LZFCompression -lcurl
 
+
 ${SAMPLE_MQTT_BULK}: ${SAMPLE_BULK_C}
-	${CC} -g3 -D_COMMUNICATION_MODE_MQTT_ -o ${SAMPLE_MQTT_BULK}  MQTTPacket/src/*c Edge/*c Implementation/*c LZFCompression/*c ${SAMPLE_BULK_C} -I Edge -I MQTTPacket/src -I Implementation -I LZFCompression
+	${CC} -g3 -D_COMMUNICATION_MODE_MQTT_ -o ${SAMPLE_MQTT_BULK}  MQTTPacket/src/*c Edge/*c Implementation/*c LZFCompression/*c ${SAMPLE_BULK_C} -I Edge -I MQTTPacket/src -I Implementation -I LZFCompression -lcurl -lcjson
+
 
 ${SAMPLE_HTTP_BULK}: ${SAMPLE_BULK_C}
-	${CC} -g3 -D_COMMUNICATION_MODE_HTTP_ -o ${SAMPLE_HTTP_BULK}  Edge/*c Implementation/*c LZFCompression/*c ${SAMPLE_BULK_C} -I Edge -I LZFCompression -lcurl
+	${CC} -g3 -D_COMMUNICATION_MODE_HTTP_ -o ${SAMPLE_HTTP_BULK}  Edge/*c Implementation/*c LZFCompression/*c ${SAMPLE_BULK_C} -I Edge -I LZFCompression -lcurl -lcjson
 
 
 ${EMBED_MQTTLIB_C_TARGET}: ${SOURCE_FILES_C} ${HEADERS_C}
@@ -94,7 +100,6 @@ ${EMBED_MQTTLIB_C_TARGET}: ${SOURCE_FILES_C} ${HEADERS_C}
 	-ln -s lib$(MQTT_EMBED_LIB_C).so.${VERSION}  ${blddir}/lib$(MQTT_EMBED_LIB_C).so.${MAJOR_VERSION}
 	-ln -s lib$(MQTT_EMBED_LIB_C).so.${MAJOR_VERSION} ${blddir}/lib$(MQTT_EMBED_LIB_C).so
 
-install: build 
+install: build
 
 endif
-

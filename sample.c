@@ -54,13 +54,14 @@ int main() {
     }
 
     // Thing registration is optional to send event.
-    /*response = register_thing(&t);
+    response = register_thing(&t);
     if (response != ERR_OK) {
         fprintf(stderr, "Failed to Register Thing. Response Code: %d, Error: %s\n", response, get_error_code_message(response));
         exit(1);
-    } else {
-        printf("Successfully Registered thing with Datonis!\n");
-    }*/
+    } 
+    else {
+        printf("************Execution Begins**********!\n");
+    }
 
     if (1) {
         send_example_alerts(&t);
